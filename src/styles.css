@@ -1,0 +1,641 @@
+:root {
+  --background: #020611;
+  --panel: rgba(9, 18, 42, 0.58);
+  --panel-border: rgba(140, 185, 255, 0.16);
+  --text: #eef3ff;
+  --muted: #8fa3c8;
+  --gold: #ffc861;
+  --cyan: #78d2ff;
+  --up: #5fe3a1;
+  --down: #ff7b7b;
+  --gap: 1.25rem;
+  color-scheme: dark;
+}
+
+/* Scales everything with the viewport: about 15px at 1920 wide, 30px on a 4K TV. */
+html {
+  font-size: clamp(12px, 0.78vw, 44px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--text);
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.transparent {
+  background: transparent;
+}
+
+#globe {
+  position: fixed;
+  inset: 0;
+}
+
+/* Darkens the edges so the panels stay readable over the globe. */
+body:not(.transparent)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 45%, rgba(2, 6, 17, 0.55) 80%),
+    linear-gradient(to top, rgba(2, 6, 17, 0.85), transparent 32%);
+}
+
+.panel,
+.card,
+.brand {
+  position: relative;
+  z-index: 2;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Brand */
+.brand {
+  position: fixed;
+  top: 2.2rem;
+  left: 2.6rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.brand__logo {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+  margin-bottom: 0.45rem;
+}
+
+.brand__title {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-size: 1.35rem;
+  color: var(--muted);
+}
+
+.live {
+  margin-top: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.live__dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.live[data-status='live'] .live__dot,
+.live[data-status='polling'] .live__dot {
+  background: var(--up);
+  box-shadow: 0 0 0.8rem var(--up);
+  animation: blink 2s ease-in-out infinite;
+}
+
+.live[data-status='live'],
+.live[data-status='polling'] {
+  color: var(--up);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Side column */
+.side {
+  position: fixed;
+  top: 2.2rem;
+  right: 2.6rem;
+  width: 20rem;
+  display: grid;
+  gap: var(--gap);
+  z-index: 2;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 1rem;
+  padding: 1.1rem 1.3rem;
+  backdrop-filter: blur(14px);
+}
+
+.rate__row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.spark {
+  /* An SVG has a 300px intrinsic width; without these it would widen the panel. */
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  height: 2.6rem;
+  margin-bottom: 0.35rem;
+  overflow: visible;
+}
+
+.spark__line {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 3px rgba(120, 210, 255, 0.6));
+}
+
+.rate__caption {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+  margin-top: -0.2rem;
+}
+
+.rate__value {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-size: 3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cyan);
+  line-height: 1.1;
+  margin-top: 0.3rem;
+}
+
+.countries ol,
+.latest ul {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.countries li,
+.latest li {
+  display: grid;
+  grid-template-columns: 1.7rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.flag {
+  display: inline-flex;
+  line-height: 1;
+}
+
+.flag .fi {
+  width: 1.45rem;
+  height: 1.05rem;
+  border-radius: 0.2rem;
+  background-size: cover;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name__place {
+  color: var(--muted);
+  margin-left: 0.2rem;
+}
+
+/* Top countries: a thin bar under each row, relative to the leader */
+.countries li {
+  position: relative;
+  padding-bottom: 0.3rem;
+}
+
+.share {
+  position: absolute;
+  left: 2.2rem;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(120, 210, 255, 0.12);
+  overflow: hidden;
+}
+
+.share::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(var(--share, 0));
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: linear-gradient(90deg, rgba(120, 210, 255, 0.35), var(--cyan));
+}
+
+.count,
+.amount {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.amount {
+  color: var(--gold);
+}
+
+.latest li {
+  animation: slide-in 0.6s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+/* Period cards */
+.stats {
+  position: fixed;
+  left: 2.6rem;
+  right: 25.2rem;
+  bottom: 2.6rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+  z-index: 2;
+}
+
+.card {
+  container-type: inline-size;
+  background: rgba(9, 18, 42, 0.42);
+  border: 1px solid var(--panel-border);
+  border-radius: 1rem;
+  padding: 0.85rem 1.2rem 0.8rem;
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+/* The card's graph: its own strip under the text, the period so far against the comparison */
+.card__chart {
+  display: block;
+  width: 100%;
+  height: 2.4rem;
+  margin-top: 0.55rem;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.chart__current {
+  fill: none;
+  stroke: rgba(120, 210, 255, 0.85);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart__area {
+  fill: rgba(120, 210, 255, 0.1);
+}
+
+.chart__previous {
+  fill: none;
+  stroke: rgba(143, 163, 200, 0.5);
+  stroke-width: 1.1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0.55;
+}
+
+.card__title {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.card__orders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.card__orders .value {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  /* Shrinks with the card (cqi = 1 % of its width), so big totals never clip in a narrow window. */
+  font-size: clamp(1.5rem, 13cqi, 2.7rem);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.card__orders .unit {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.card__sek {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-size: clamp(0.95rem, 6.6cqi, 1.35rem);
+  font-weight: 500;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.35rem;
+}
+
+.card__compare {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.change {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.change[data-direction='up'] {
+  color: var(--up);
+}
+
+.change[data-direction='down'] {
+  color: var(--muted);
+}
+
+.card--reset {
+  animation: reset-flash 1.4s ease-out;
+}
+
+@keyframes reset-flash {
+  0% {
+    box-shadow: inset 0 0 0 2px var(--cyan);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+
+.credits {
+  position: fixed;
+  right: 2.6rem;
+  bottom: 1rem;
+  font-size: 0.7rem;
+  color: rgba(143, 163, 200, 0.6);
+  z-index: 2;
+}
+
+/* Office marker on the globe */
+.office {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.office__dot,
+.office__pulse {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.office__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: #fff;
+  box-shadow:
+    0 0 0.6rem var(--cyan),
+    0 0 1.6rem var(--cyan);
+}
+
+.office__pulse {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--cyan);
+  animation: pulse 2.4s ease-out infinite;
+}
+
+@keyframes pulse {
+  from {
+    width: 0.75rem;
+    height: 0.75rem;
+    opacity: 1;
+  }
+  to {
+    width: 4rem;
+    height: 4rem;
+    opacity: 0;
+  }
+}
+
+.office__label {
+  position: absolute;
+  left: 1.1rem;
+  top: -0.95rem;
+  display: grid;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(9, 18, 42, 0.7);
+  border: 1px solid var(--panel-border);
+}
+
+.office__label span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* Milestones: a banner over the globe, a glow on the Today card */
+.milestone {
+  position: fixed;
+  top: 2.4rem;
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  padding: 1.1rem 2.6rem 1.2rem;
+  border-radius: 1.2rem;
+  background: rgba(9, 18, 42, 0.72);
+  border: 1px solid rgba(255, 200, 97, 0.45);
+  box-shadow: 0 0 2.5rem rgba(255, 200, 97, 0.25), inset 0 0 1.5rem rgba(255, 200, 97, 0.08);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translate(-50%, -1.5rem) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity 0.6s ease,
+    transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.milestone--show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.milestone__kicker {
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.milestone__value {
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-size: 3.4rem;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff6dd, var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.milestone__text {
+  color: var(--text);
+  font-size: 1.05rem;
+}
+
+.card--celebrate {
+  animation: celebrate 3.2s ease-out;
+}
+
+@keyframes celebrate {
+  0%,
+  100% {
+    box-shadow: none;
+    border-color: var(--panel-border);
+  }
+  15%,
+  55% {
+    box-shadow: 0 0 2.2rem rgba(255, 200, 97, 0.35);
+    border-color: rgba(255, 200, 97, 0.6);
+  }
+}
+
+/* An order's total, floating up from where it was placed */
+.order-total {
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #7dffb8;
+  text-shadow: 0 0 0.5rem rgba(10, 30, 20, 0.9), 0 0 0.8rem rgba(95, 227, 161, 0.75), 0 0 1.6rem rgba(95, 227, 161, 0.45);
+  pointer-events: none;
+  animation: order-total 3.2s ease-out forwards;
+}
+
+@keyframes order-total {
+  0% {
+    opacity: 0;
+    margin-top: 0.6rem;
+  }
+  12% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    margin-top: -1.6rem;
+  }
+}
+
+/* Embedded and configurable parts */
+.embedded .brand,
+.embedded .credits,
+.no-side .side,
+.no-counters .stats {
+  display: none;
+}
+
+.no-side .stats {
+  right: 2.6rem;
+}
+
+/* Narrow screens: cards in a 2 × 2 grid, no side column. */
+@media (max-width: 900px) {
+  html {
+    font-size: 12px;
+  }
+
+  .side {
+    display: none;
+  }
+
+  .brand {
+    top: 1rem;
+    left: 1rem;
+  }
+
+  .stats {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .card {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .card__orders .value {
+    font-size: clamp(1.4rem, 13cqi, 2.2rem);
+  }
+
+  .card__sek {
+    font-size: clamp(0.9rem, 6.6cqi, 1.15rem);
+  }
+
+  .credits {
+    display: none;
+  }
+}
