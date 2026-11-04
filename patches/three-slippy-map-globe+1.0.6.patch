@@ -1,0 +1,47 @@
+diff --git a/node_modules/three-slippy-map-globe/dist/three-slippy-map-globe.mjs b/node_modules/three-slippy-map-globe/dist/three-slippy-map-globe.mjs
+index d4a84f6..58764a0 100644
+--- a/node_modules/three-slippy-map-globe/dist/three-slippy-map-globe.mjs
++++ b/node_modules/three-slippy-map-globe/dist/three-slippy-map-globe.mjs
+@@ -485,6 +485,31 @@ function _buildMetaLevel(level) {
+     return d.centroid.z;
+   }).addAll(levelMeta);
+ }
++var HIDDEN_TILE_LIFETIME_MS = 5000;
++function _releaseHiddenTiles() {
++  var _this6 = this;
++  var isInView = _classPrivateFieldGet2(_isInView, this);
++  if (!isInView) return;
++  var now = performance.now();
++  if (now - (this.lastRelease || 0) < 1000) return;
++  this.lastRelease = now;
++  var meta = _classPrivateFieldGet2(_tilesMeta, this);
++  Object.keys(meta).forEach(function (level) {
++    meta[level].forEach(function (d) {
++      if (!d.obj) return;
++      if (d.seenAt === undefined) d.seenAt = now;
++      if (d.hullPnts && !isInView(d)) {
++        if (now - d.seenAt < HIDDEN_TILE_LIFETIME_MS) return;
++        _this6.remove(d.obj);
++        _deallocate(d.obj);
++        delete d.obj;
++        delete d.seenAt;
++        return;
++      }
++      d.seenAt = now;
++    });
++  });
++}
+ function _fetchNeededTiles() {
+   var _this5 = this;
+   if (!this.tileUrl || this.level === undefined || !_classPrivateFieldGet2(_tilesMeta, this).hasOwnProperty(this.level)) return;
+@@ -557,6 +582,10 @@ function _fetchNeededTiles() {
+   });
+   */
+ 
++  // Patched for global-order-overview: tiles that have been out of view for a while are released,
++  // at every level. The engine never released them, so a drifting or zooming camera kept adding
++  // tiles until the GPU ran out of memory. A tile that comes back into view is fetched again.
++  _assertClassBrand(_ThreeSlippyMapGlobe_brand, this, _releaseHiddenTiles).call(this);
+   tiles.filter(function (d) {
+     return !d.obj;
+   }).filter(_classPrivateFieldGet2(_isInView, this) || function () {

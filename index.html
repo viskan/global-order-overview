@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Orders flowing through Viskan's platform, live on a globe." />
+    <meta name="theme-color" content="#020611" />
+    <!-- The page is dark already: keep dark-mode extensions and forced dark modes from inverting it. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="darkreader-lock" />
+    <title>Viskan Live Orders</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Viskan Live Orders" />
+    <meta property="og:description" content="Orders flowing through Viskan's platform, live on a globe." />
+    <meta property="og:url" content="https://live.viskan.com/" />
+    <meta property="og:image" content="https://live.viskan.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="globe" aria-hidden="true"></div>
+
+    <header class="brand">
+      <img class="brand__logo" src="/viskan-logo-white.svg" alt="Viskan" />
+      <div class="brand__title">Live orders</div>
+      <div class="live" id="live"><span class="live__dot"></span><span id="live-text">Connecting…</span></div>
+    </header>
+
+    <aside class="side">
+      <section class="panel rate">
+        <div class="label">Orders per minute</div>
+        <div class="rate__row">
+          <div class="rate__value" id="rate">–</div>
+          <svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#78d2ff" stop-opacity="0.35" />
+                <stop offset="1" stop-color="#78d2ff" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path class="spark__area" fill="url(#spark-fill)" />
+            <path class="spark__line" />
+          </svg>
+        </div>
+        <div class="rate__caption">last 60 minutes</div>
+      </section>
+      <section class="panel countries">
+        <div class="label">Top countries today</div>
+        <ol id="countries"></ol>
+      </section>
+      <section class="panel latest">
+        <div class="label">Latest orders</div>
+        <ul id="latest"></ul>
+      </section>
+    </aside>
+
+    <section class="stats" id="stats"></section>
+
+    <div class="milestone" id="milestone" role="status" aria-live="polite"></div>
+
+    <div class="quality" id="quality" role="group" aria-label="Quality" hidden>
+      <span class="quality__label">Quality</span>
+      <button type="button" data-quality="low">Low</button>
+      <button type="button" data-quality="high">High</button>
+    </div>
+    <footer class="credits">Locations © GeoNames (CC BY 4.0) · Earth imagery © NASA</footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
