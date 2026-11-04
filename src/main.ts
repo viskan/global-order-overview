@@ -2,7 +2,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/space-grotesk';
 import 'flag-icons/css/flag-icons.min.css';
 import './styles.css';
-import { config } from './config';
+import { config, qualityStorageKey } from './config';
 import { Counters } from './counters';
 import { Feed, type FeedHandlers } from './feed';
 import { OrderGlobe } from './globe';
@@ -27,6 +27,28 @@ const milestones = new Milestones(document.getElementById('milestone')!, () => {
   globe.celebrate();
   counters.celebrate('today');
 });
+// The quality switch: shown when the page runs in low quality or the viewer has chosen, so a fast
+// machine never sees it. A choice is remembered in this browser and never changed automatically.
+const qualitySwitch = document.getElementById('quality')!;
+const showQuality = (level: number, mode: string): void => {
+  qualitySwitch.hidden = config.embedded || (mode === 'auto' && level === 2);
+  qualitySwitch.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+    button.setAttribute('aria-pressed', String((button.dataset.quality === 'high') === (level === 2)));
+  });
+};
+globe.onQualityChange = showQuality;
+showQuality(globe.quality.level, globe.quality.mode);
+qualitySwitch.addEventListener('click', (event) => {
+  const choice = (event.target as HTMLElement).closest('button')?.dataset.quality;
+  if (choice !== 'low' && choice !== 'high') return;
+  try {
+    window.localStorage.setItem(qualityStorageKey, choice);
+  } catch {
+    // Not stored (blocked storage): the choice still holds until the page is reloaded.
+  }
+  globe.setQualityMode(choice);
+});
+
 const live = document.getElementById('live')!;
 const liveText = document.getElementById('live-text')!;
 

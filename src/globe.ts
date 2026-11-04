@@ -19,7 +19,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { Comet, type CometStyle, getGlowTexture } from './comet';
-import { config } from './config';
+import { config, type QualityMode } from './config';
 import { formatSek } from './format';
 import { HeatLayer } from './heat';
 import { Summon, summonMs } from './spawn';
@@ -156,7 +156,10 @@ export class OrderGlobe {
   private readonly officeDatum: Marker = { kind: 'office', lat: config.office.lat, lng: config.office.lng };
   private readonly heat: HeatLayer;
   private nextId = 1;
+  /** Kept when the glow is switched off, so it can be switched on again in place. */
   private bloom: UnrealBloomPass | null = null;
+  private bloomIndex = -1;
+  private fullPixelRatio = 1;
 
   private cameraMode: 'drift' | 'viewer' | 'return' | 'shot' = 'drift';
   private interacting = false;
@@ -170,6 +173,10 @@ export class OrderGlobe {
 
   /** 2 = everything, 1 = no bloom, 0 = no bloom and 1× pixel density. */
   private qualityLevel = 2;
+  /** `auto` may lower the quality on a slow machine; a choice of `low` or `high` is kept. */
+  private qualityMode: QualityMode = config.quality;
+  /** Called whenever the quality level or mode changes, for the quality switch. */
+  onQualityChange: (level: number, mode: QualityMode) => void = () => {};
   private frameTimes: number[] = [];
   /** The intro and the first tile loads are slow on any PC: frames before this don't count. */
   private readonly qualityWarmupUntil = performance.now() + 10_000;
@@ -227,6 +234,7 @@ export class OrderGlobe {
 
     const renderer = this.globe.renderer();
     renderer.setPixelRatio(Math.min(renderer.getPixelRatio(), maxRenderWidth / window.innerWidth));
+    this.fullPixelRatio = renderer.getPixelRatio();
 
     // Bloom only on bright things (comets, rings, big cities), so the map itself stays crisp.
     if (!config.transparent) {
@@ -234,10 +242,7 @@ export class OrderGlobe {
       const composer = this.globe.postProcessingComposer();
       composer.setPixelRatio(renderer.getPixelRatio());
       composer.addPass(this.bloom);
-    }
-    if (config.quality === 'low') {
-      this.lowerQuality();
-      this.lowerQuality();
+      this.bloomIndex = composer.passes.indexOf(this.bloom);
     }
 
     this.heat = new HeatLayer((lat, lng) => {
@@ -260,6 +265,7 @@ export class OrderGlobe {
     } else {
       this.globe.scene().add(this.heat.object);
     }
+    if (this.qualityMode === 'low') this.applyQuality(0);
 
     this.setUpControls();
     this.resize();
@@ -359,21 +365,35 @@ export class OrderGlobe {
     }
   }
 
-  /** Steps down one quality level: first the bloom, then the pixel density. */
-  private lowerQuality(): void {
-    console.info(`[globe] lowering quality from level ${this.qualityLevel}`);
-    if (this.qualityLevel === 2 && this.bloom) {
-      this.globe.postProcessingComposer().removePass(this.bloom);
-      this.bloom = null;
-      this.qualityLevel = 1;
-    } else if (this.qualityLevel >= 1) {
-      this.globe.renderer().setPixelRatio(1);
-      this.globe.postProcessingComposer().setPixelRatio(1);
+  /** Applies a quality level: 2 = everything, 1 = no glow, 0 = no glow and 1× pixel density. */
+  private applyQuality(level: number): void {
+    const composer = this.globe.postProcessingComposer();
+    if (this.bloom) {
+      const active = composer.passes.includes(this.bloom);
+      if (level === 2 && !active) composer.insertPass(this.bloom, this.bloomIndex);
+      if (level < 2 && active) composer.removePass(this.bloom);
+    }
+    const pixelRatio = level === 0 ? 1 : this.fullPixelRatio;
+    if (this.globe.renderer().getPixelRatio() !== pixelRatio) {
+      this.globe.renderer().setPixelRatio(pixelRatio);
+      composer.setPixelRatio(pixelRatio);
       this.resize();
       this.updateHeatScale();
-      this.qualityLevel = 0;
     }
-    document.body.dataset.quality = String(this.qualityLevel);
+    this.qualityLevel = level;
+    document.body.dataset.quality = String(level);
+    this.onQualityChange(level, this.qualityMode);
+  }
+
+  get quality(): { level: number; mode: QualityMode } {
+    return { level: this.qualityLevel, mode: this.qualityMode };
+  }
+
+  /** The viewer's choice from the quality switch: kept as is, never lowered automatically. */
+  setQualityMode(mode: 'low' | 'high'): void {
+    this.qualityMode = mode;
+    this.slowChecks = 0;
+    this.applyQuality(mode === 'low' ? 0 : 2);
   }
 
   /**
@@ -382,7 +402,7 @@ export class OrderGlobe {
    * density is never lowered automatically, since that visibly blurs everything; `?quality=low` does it.
    */
   private checkQuality(now: number, elapsed: number): void {
-    if (config.quality !== 'auto' || this.qualityLevel < 2 || document.hidden) return;
+    if (this.qualityMode !== 'auto' || this.qualityLevel < 2 || document.hidden) return;
     // Ignore the warm-up, gaps from a background tab and stalled frames.
     if (now < this.qualityWarmupUntil) return;
     if (elapsed > 0 && elapsed < 250) this.frameTimes.push(elapsed);
@@ -395,7 +415,8 @@ export class OrderGlobe {
     // Three slow checks in a row (about 12 s), so a passing hiccup never changes the look.
     if (this.slowChecks >= 3) {
       this.slowChecks = 0;
-      this.lowerQuality();
+      console.info('[globe] turning the glow off: the frame rate stayed low');
+      this.applyQuality(1);
     }
   }
 

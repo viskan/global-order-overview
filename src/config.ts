@@ -8,6 +8,24 @@ const flag = (name: string, fallback: boolean): boolean => {
 
 const embedded = window.location.pathname.replace(/\/+$/, '').endsWith('/embed') || flag('embed', false);
 
+export type QualityMode = 'auto' | 'low' | 'high';
+
+export const qualityStorageKey = 'global-order-overview.quality';
+
+const isQualityChoice = (value: string | null): value is 'low' | 'high' => value === 'low' || value === 'high';
+
+const readQuality = (): QualityMode => {
+  const fromUrl = parameters.get('quality');
+  if (isQualityChoice(fromUrl)) return fromUrl;
+  try {
+    const stored = window.localStorage.getItem(qualityStorageKey);
+    if (isQualityChoice(stored)) return stored;
+  } catch {
+    // Storage can be blocked (private windows, embedded frames): fall back to automatic.
+  }
+  return 'auto';
+};
+
 export const config = {
   apiUrl: (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, '') || 'http://localhost:8080',
   /** Viskan's main office, Druveforsvägen 8, 504 33 Borås. Every arc ends here. */
@@ -31,6 +49,9 @@ export const config = {
   /** Development only: drive the page with a scripted feed (`?mock=<scenario>`, see mock.ts). */
   mock: import.meta.env.DEV ? parameters.get('mock') : null,
   tiles: parameters.get('globe') !== 'texture',
-  /** `auto` lowers quality when the frame rate drops; `low` and `high` fix it. */
-  quality: (['low', 'high'].includes(parameters.get('quality') ?? '') ? parameters.get('quality') : 'auto') as 'auto' | 'low' | 'high',
+  /**
+   * `auto` lowers quality when the frame rate drops; `low` and `high` fix it. From `?quality=`, else
+   * the viewer's last choice on the quality switch.
+   */
+  quality: readQuality(),
 };
