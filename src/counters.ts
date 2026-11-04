@@ -8,7 +8,10 @@ const titles: Record<PeriodKey, { title: string; comparison: string }> = {
   month: { title: 'Last 30 days', comparison: 'vs previous 30 days' },
 };
 
-const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
+/** Below this many orders in the compared span the percentage is noise, so it is left out. */
+const minimumComparableOrders = 30;
+
+const easeOutCubic =(t: number): number => 1 - (1 - t) ** 3;
 
 /** Steps averaged in each card's graph: minutes are noisy, quarters a little, 6 h and days not. */
 const smoothingSteps: Record<PeriodKey, number> = { hour: 5, today: 3, week: 2, month: 1 };
@@ -89,7 +92,9 @@ class PeriodCard {
     this.orders.set(current.orders, mode);
     this.sek.set(current.sek, mode);
 
-    const change = formatChange(current.sek, previous.sek);
+    // A few orders on each side swing wildly (5 against 8 is −38%), as at the start of every hour.
+    const change =
+      previous.orders < minimumComparableOrders ? { text: '–', direction: 'flat' } : formatChange(current.sek, previous.sek);
     this.change.textContent = change.text;
     this.change.dataset.direction = change.direction;
     this.previous.textContent = `${this.comparisonLabel} · ${formatSek(previous.sek)}`;
