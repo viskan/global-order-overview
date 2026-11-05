@@ -224,11 +224,6 @@ body:not(.transparent)::after {
   white-space: nowrap;
 }
 
-.name__place {
-  color: var(--muted);
-  margin-left: 0.2rem;
-}
-
 /* Top countries: a thin bar under each row, relative to the leader */
 .countries li {
   position: relative;

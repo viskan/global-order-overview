@@ -27,8 +27,6 @@ export type Order = {
   lat: number;
   lng: number;
   country: string;
-  /** Town or city, when the order was located there. */
-  place?: string;
   items: number;
   sek: number;
   /** Replay time in server milliseconds: purchase time plus the replay delay. */

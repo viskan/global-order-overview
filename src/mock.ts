@@ -167,7 +167,6 @@ export class MockFeed {
       lat: place.lat + (Math.random() - 0.5) * 0.6,
       lng: place.lng + (Math.random() - 0.5) * 1.2,
       country: place.country,
-      place: place.place,
       items: 1 + Math.floor(Math.random() * 3),
       sek,
       at: Date.now(),

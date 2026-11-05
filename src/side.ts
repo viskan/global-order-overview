@@ -91,13 +91,9 @@ export class LatestPanel {
     if (order.sek <= 0) return;
     const item = document.createElement('li');
     const country = countryName(order.country);
-    const place = order.place ? ` <span class="name__place">${escapeHtml(order.place)}</span>` : '';
-    item.innerHTML = `<span class="flag">${flag(order.country)}</span><span class="name">${country}${place}</span>
+    item.innerHTML = `<span class="flag">${flag(order.country)}</span><span class="name">${country}</span>
       <span class="amount">${formatSek(order.sek)}</span>`;
     this.list.prepend(item);
     while (this.list.children.length > maxLatest) this.list.lastElementChild?.remove();
   }
 }
-
-const escapeHtml = (text: string): string =>
-  text.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
