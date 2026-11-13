@@ -67,6 +67,8 @@ const shotZoomOut = 0.22;
 /** Never render wider than a 4K screen, whatever the device pixel ratio. */
 const maxRenderWidth = 3840;
 const maxNearTileLevel = 7;
+/** How far up the drift view's centre moves on a phone, as a share of the screen height. */
+const phoneViewShift = 0.18;
 const gibs = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best';
 
 /**
@@ -163,6 +165,8 @@ export class OrderGlobe {
   private fullPixelRatio = 1;
 
   private cameraMode: 'drift' | 'viewer' | 'return' | 'shot' = 'drift';
+  /** Share of the screen height the drift view is moved up by (phones, see resize). */
+  private viewShift = 0;
   private interacting = false;
   private lastInteraction = 0;
   private returnFrom: View = { lat: 0, lng: 0, altitude: 1 };
@@ -445,10 +449,12 @@ export class OrderGlobe {
   /** A slow, continuous drift around Scandinavia, where most orders come from. */
   private driftView(now: number): View {
     const seconds = now / 1000;
+    const altitude = 0.48 + 0.08 * Math.sin((seconds / 55) * 2 * Math.PI);
     return {
-      lat: 56.5 + 2.5 * Math.sin((seconds / 70) * 2 * Math.PI),
+      // The screen spans roughly 53 degrees of latitude per unit of altitude.
+      lat: 56.5 + 2.5 * Math.sin((seconds / 70) * 2 * Math.PI) - this.viewShift * 53 * altitude,
       lng: 14 + 7 * Math.sin((seconds / 95) * 2 * Math.PI),
-      altitude: 0.48 + 0.08 * Math.sin((seconds / 55) * 2 * Math.PI),
+      altitude,
     };
   }
 
@@ -537,6 +543,10 @@ export class OrderGlobe {
     this.globe.width(window.innerWidth).height(window.innerHeight);
     this.updateHeatScale();
     this.sharpenTiles();
+    // On a phone the cards cover the lower part of the screen (the 900 px layout in styles.css), so
+    // the camera aims further south and Scandinavia sits in the free space above them.
+    const portraitPhone = window.innerWidth <= 900 && window.innerHeight > window.innerWidth;
+    this.viewShift = config.showCounters && portraitPhone ? phoneViewShift : 0;
   }
 
   /**
